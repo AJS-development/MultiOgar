@@ -9,7 +9,10 @@
     "dependencies": {
         "quad-node": "^1.0.5",
         "vector2-node": "latest",
-        "ws": "latest"
+        "ws": "latest",
+        "uglify-js": "latest",
+        "javascript-obfuscator": "latest",
+        "express": "latest"
     },
     "devDependencies": {},
     "scripts": {
