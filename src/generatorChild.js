@@ -69,8 +69,8 @@ process.on('message', (msg, socket) => {
                     return updatenodes.getb
                 })
 
-                //nclient = compile(nclient);
-                //nclient = obfuscate(nclient);
+                nclient = compile(nclient);
+                nclient = obfuscate(nclient);
                 generated.push({
                     UNodesProtocol: updatenodes.set,
                     UNodesProtocolBrowser: updatenodes.getb,

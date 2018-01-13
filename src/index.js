@@ -81,7 +81,7 @@
 
  // Run Ogar
  var p = require('./generateProtocols.js');
- p(10, function (protocols) {
+ p(50, function (protocols) {
      var gameServer = new GameServer(protocols);
 
 
