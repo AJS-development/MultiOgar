@@ -1,4 +1,4 @@
-﻿{
+{
     "name": "MultiOgar",
     "version": "1.2.69",
     "description": "Open source Ogar server",
@@ -10,7 +10,7 @@
         "quad-node": "^1.0.5",
         "vector2-node": "latest",
         "ws": "latest",
-        "uglify-js": "latest",
+        "uglify-es": "latest",
         "javascript-obfuscator": "latest",
         "express": "latest"
     },

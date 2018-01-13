@@ -19,7 +19,8 @@ module.exports = function (obj, data, name, type, lvl, opt) {
 
     var split = obj.split(" ");
     var get, set, count;
-
+    var off = "",
+        off2 = ""
     var dtobj = {
         dynamic: function () {
             get = 'reader.readDynamic()'
@@ -90,9 +91,8 @@ module.exports = function (obj, data, name, type, lvl, opt) {
             mindiff = 255 - diff;
         }
 
-        var off = "",
-            off2 = "",
-            omin = min;
+
+        var omin = min;
         if (opt.scrambleNumbers) {
             var offset = Math.floor(Math.random() * mindiff);
             min += offset;

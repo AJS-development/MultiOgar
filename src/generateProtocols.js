@@ -44,7 +44,7 @@ module.exports = function (amount, call) {
     loading("Generating secure protocol.")
 
     var results = [];
-    var client = fs.readFileSync(__dirname + '/../client/js/game.js', 'utf8');
+    var client = fs.readFileSync(__dirname + '/../client/main_out.js', 'utf8');
     var childs = [];
     for (var i = 0; i < cpus; i++) {
         childs.push(Child.fork(__dirname + '/generatorChild.js'))
@@ -88,11 +88,12 @@ module.exports = function (amount, call) {
                     if (results.length === amount) {
                         results.forEach((d, i) => {
                             d.id = i;
+                            d.update = new Function('data1', d.UNodesProtocol);
                         })
                         childs.forEach((child) => {
                             child.send({
                                 type: 'stop'
-                            })
+                            });
                         });
                         loading('Done! ' + results.length + '/' + amount);
                         console.log('')
@@ -104,29 +105,32 @@ module.exports = function (amount, call) {
             child.send({
                 type: 'generate',
                 client: client,
+                amount: a,
                 updateNodesStruct: {
-                    deleteUnits: [
-                "int 0 4000000000"
-            ],
-                    addUnits: [
+                    eat: [
                         {
-                            id: "int 0 4000000000",
-                            ownerID: "int 0 4000000000",
-                            x: "int 0 4000000000",
-                            y: "int 0 4000000000",
-                            rotation: "int 0 255",
-                            type: "int 0 100"
-                }
-            ],
-                    moveUnits: [
+                            killer: 'int 0 4000000000',
+                            killed: 'int 0 4000000000'
+                        }
+                    ],
+                    update: [
                         {
-                            id: "int 0 4000000000",
-                            x: "int -32000 32000",
-                            y: "int -32000 32000",
+                            id: 'int 0 4000000000',
+                            posX: 'int -32000 32000',
+                            posY: 'int -32000 32000',
+                            size: 'int -32000 32000',
+                            r: 'int uint8',
+                            g: 'int uint8',
+                            b: 'int uint8',
+                            flags: 'int 0 50',
+                            skin: 'string 8',
+                            name: 'string 16',
+                        }
+                    ],
+                    remove: [
+                        'int 0 4000000000'
+                    ]
                 }
-            ]
-                },
-                amount: a
             })
 
         }

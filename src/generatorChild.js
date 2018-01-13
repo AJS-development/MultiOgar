@@ -18,7 +18,7 @@
 */
 
 var JavaScriptObfuscator = require('javascript-obfuscator');
-var SimpleProtocols = require('../modules/SimpleProtocols/index.js');
+var SimpleProtocols = require('./modules/SimpleProtocols/index.js');
 var UglifyJS = require("uglify-es");
 var fs = require('fs');
 
@@ -63,16 +63,14 @@ process.on('message', (msg, socket) => {
     switch (msg.type) {
         case 'generate':
 
-            msg.client;
-            msg.updateNodesStruct;
             for (var i = 0; i < msg.amount; i++) {
                 var updatenodes = SimpleProtocols(msg.updateNodesStruct);
                 var nclient = msg.client.replace('// INSERT PROTOCOL', function () {
                     return updatenodes.getb
                 })
 
-                nclient = compile(nclient);
-                nclient = obfuscate(nclient);
+                //nclient = compile(nclient);
+                //nclient = obfuscate(nclient);
                 generated.push({
                     UNodesProtocol: updatenodes.set,
                     UNodesProtocolBrowser: updatenodes.getb,

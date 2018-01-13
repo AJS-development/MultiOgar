@@ -113,7 +113,7 @@ module.exports = function (object, options) {
         data.get.push(rc4);
         data.count.push(rc4);
     }
-    //data.get.push("var reader = new Reader(buf);");
+    data.get.push("var reader = new Reader(buf,ind);");
 
     data.count.push("var byteLen = 0;")
     //  data.count.push("var ifs = [];")
@@ -214,7 +214,7 @@ module.exports = function (object, options) {
 
     if (data.if) data.count.push("byteLen += Math.ceil(ifs.length / 7) + 1")
     data.count.push("var writer = new Writer(byteLen + 1);")
-    data.count.push("writer.writeUInt8(2);")
+    data.count.push("writer.writeUInt8(16);")
     if (data.if) data.count.push("setIfs(writer,ifs);");
 
     if (data.if) {
@@ -224,9 +224,9 @@ module.exports = function (object, options) {
         var getCode = sprintf(data.get.toString(), "", "")
         var setCode = sprintf(data.count.toString(), "", "") + "\n" + data.set.toString()
     }
-    var get = "function " + options.getname + "(reader) {\n" + getCode + "}";
-    var set = "function " + options.setname + "(data1) {\n" + FastBuffers.NodeJS("writer") + "\n" + setCode + "}";
-    var getBrowser = "function " + options.getname + "(reader) {\n" + getCode + "}";
+    var get = "function " + options.getname + "(buf,ind) {\n" + FastBuffers.NodeJS("reader") + getCode + "}";
+    var set = FastBuffers.NodeJS("writer") + "\n" + setCode;
+    var getBrowser = "function " + options.getname + "(buf,ind) {\n" + FastBuffers.Browser("reader") + getCode + "}";
     var setBrowser = "function " + options.setname + "(data1) {" + FastBuffers.Browser("writer") + "\n" + setCode + "}";
 
     if (options.pack) {

@@ -1,9 +1,10 @@
-﻿var Packet = require('./packet');
+var Packet = require('./packet');
 var GameServer = require('./GameServer');
 var BinaryWriter = require("./packet/BinaryWriter");
 var UserRoleEnum = require("./enum/UserRoleEnum");
 
-function PlayerTracker(gameServer, socket) {
+function PlayerTracker(gameServer, socket, proto) {
+    this.protocol = proto;
     this.gameServer = gameServer;
     this.socket = socket;
     this.pID = -1;
@@ -16,7 +17,11 @@ function PlayerTracker(gameServer, socket) {
     this._nameUtf8 = null;
     this._nameUnicode = null;
     this._skinUtf8 = null;
-    this.color = { r: 0, g: 0, b: 0 };
+    this.color = {
+        r: 0,
+        g: 0,
+        b: 0
+    };
     this.viewNodes = [];
     this.clientNodes = [];
     this.cells = [];
@@ -26,19 +31,19 @@ function PlayerTracker(gameServer, socket) {
     this._scaleF = 1;
     this.isMassChanged = true;
     this.borderCounter = 0;
-    
+
     this.mouse = {
         x: 0,
         y: 0
     };
     this.tickLeaderboard = 0;
-    
+
     this.team = 0;
     this.spectate = false;
-    this.freeRoam = false;      // Free-roam mode enables player to move in spectate mode
+    this.freeRoam = false; // Free-roam mode enables player to move in spectate mode
     this.spectateTarget = null; // Spectate target, null for largest player
     this.lastSpectateSwitchTick = 0;
-    
+
     this.centerPos = {
         x: 0,
         y: 0
@@ -53,17 +58,17 @@ function PlayerTracker(gameServer, socket) {
         halfWidth: 0,
         halfHeight: 0
     };
-    
+
     // Scramble the coordinate system for anti-raga
     this.scrambleX = 0;
     this.scrambleY = 0;
     this.scrambleId = 0;
-    
+
     this.connectedTime = 0;
     this.isMinion = false;
     this.spawnCounter = 0;
     this.isMuted = false;
-    
+
     // Gamemode function
     if (gameServer) {
         this.connectedTime = gameServer.stepDateTime;
@@ -88,8 +93,7 @@ PlayerTracker.prototype.scramble = function () {
         this.scrambleX = 0;
         this.scrambleY = 0;
     } else {
-        this.scrambleId = (Math.random() * 0xFFFFFFFF) >>> 0;
-        // avoid mouse packet limitations
+        this.scrambleId = 0;
         var maxx = Math.max(0, 32767 - 1000 - this.gameServer.border.width);
         var maxy = Math.max(0, 32767 - 1000 - this.gameServer.border.height);
         var x = maxx * Math.random();
@@ -219,7 +223,7 @@ PlayerTracker.prototype.joinGame = function (name, skin) {
     this.spectate = false;
     this.freeRoam = false;
     this.spectateTarget = null;
-    
+
     // some old clients don't understand ClearAll message
     // so we will send update for them
     if (this.socket.packetHandler.protocol < 6) {
@@ -231,8 +235,7 @@ PlayerTracker.prototype.joinGame = function (name, skin) {
     if (this.gameServer.config.serverScrambleLevel < 2) {
         // no scramble / lightweight scramble
         this.socket.sendPacket(new Packet.SetBorder(this, this.gameServer.border));
-    }
-    else if (this.gameServer.config.serverScrambleLevel == 3) {
+    } else if (this.gameServer.config.serverScrambleLevel == 3) {
         // Scramble level 3 (no border)
         // Ruins most known minimaps
         var border = {
@@ -286,7 +289,7 @@ PlayerTracker.prototype.updateTick = function () {
         if (this.freeRoam || this.getSpectateTarget() == null) {
             // free roam
             this.updateCenterFreeRoam();
-            this._scale = this.gameServer.config.serverSpectatorScale;//0.25;
+            this._scale = this.gameServer.config.serverSpectatorScale; //0.25;
         } else {
             // spectate target
             return;
@@ -300,16 +303,16 @@ PlayerTracker.prototype.updateTick = function () {
 };
 
 PlayerTracker.prototype.sendUpdate = function () {
-    if (this.isRemoved|| 
+    if (this.isRemoved ||
         !this.socket.packetHandler.protocol ||
-        !this.socket.isConnected || 
-        (this.socket._socket.writable != null && !this.socket._socket.writable) || 
+        !this.socket.isConnected ||
+        (this.socket._socket.writable != null && !this.socket._socket.writable) ||
         this.socket.readyState != this.socket.OPEN) {
         // do not send update for disconnected clients
         // also do not send if initialization is not complete yet
         return;
     }
-    
+
     if (this.spectate) {
         if (!this.freeRoam) {
             // spectate target
@@ -323,7 +326,7 @@ PlayerTracker.prototype.sendUpdate = function () {
         }
         this.sendCameraPacket();
     }
-    
+
     if (this.gameServer.config.serverScrambleLevel == 2) {
         // scramble (moving border)
         if (this.borderCounter == 0) {
@@ -339,7 +342,7 @@ PlayerTracker.prototype.sendUpdate = function () {
         if (this.borderCounter >= 20)
             this.borderCounter = 0;
     }
-    
+
     var delNodes = [];
     var eatNodes = [];
     var addNodes = [];
@@ -368,11 +371,11 @@ PlayerTracker.prototype.sendUpdate = function () {
         newIndex++;
         oldIndex++;
     }
-    for (; newIndex < this.viewNodes.length; ) {
+    for (; newIndex < this.viewNodes.length;) {
         addNodes.push(this.viewNodes[newIndex]);
         newIndex++;
     }
-    for (; oldIndex < this.clientNodes.length; ) {
+    for (; oldIndex < this.clientNodes.length;) {
         var node = this.clientNodes[oldIndex];
         if (node.isRemoved && node.getKiller() != null && node.owner != node.getKiller().owner)
             eatNodes.push(node);
@@ -381,15 +384,15 @@ PlayerTracker.prototype.sendUpdate = function () {
         oldIndex++;
     }
     this.clientNodes = this.viewNodes;
-    
+
     // Send packet
     this.socket.sendPacket(new Packet.UpdateNodes(
-        this, 
-        addNodes, 
-        updNodes, 
-        eatNodes, 
+        this,
+        addNodes,
+        updNodes,
+        eatNodes,
         delNodes));
-    
+
     // Update leaderboard
     if (++this.tickLeaderboard > 25) {
         // 1 / 0.040 = 25 (once per second)
@@ -427,18 +430,18 @@ PlayerTracker.prototype.updateCenterFreeRoam = function () {
     var dx = this.mouse.x - this.centerPos.x;
     var dy = this.mouse.y - this.centerPos.y;
     var squared = dx * dx + dy * dy;
-    if (squared < 1) return;     // stop threshold
-    
+    if (squared < 1) return; // stop threshold
+
     // distance
     var d = Math.sqrt(squared);
-    
+
     var invd = 1 / d;
     var nx = dx * invd;
     var ny = dy * invd;
-    
+
     var speed = Math.min(d, 32);
     if (speed <= 0) return;
-    
+
     var x = this.centerPos.x + nx * speed;
     var y = this.centerPos.y + ny * speed;
     this.setCenterPos(x, y);
@@ -473,7 +476,7 @@ PlayerTracker.prototype.pressQ = function () {
         if (tick - this.lastSpectateSwitchTick < 40)
             return;
         this.lastSpectateSwitchTick = tick;
-        
+
         if (this.spectateTarget == null) {
             this.freeRoam = !this.freeRoam;
         }
@@ -484,8 +487,7 @@ PlayerTracker.prototype.pressQ = function () {
 PlayerTracker.prototype.pressW = function () {
     if (this.spectate) {
         return;
-    }
-    else if (this.gameServer.run) {
+    } else if (this.gameServer.run) {
         this.gameServer.ejectMass(this);
     }
 };
@@ -497,7 +499,7 @@ PlayerTracker.prototype.pressSpace = function () {
         if (tick - this.lastSpectateSwitchTick < 40)
             return;
         this.lastSpectateSwitchTick = tick;
-        
+
         // Space doesn't work for freeRoam mode
         if (this.freeRoam || this.gameServer.largestClient == null)
             return;
@@ -557,7 +559,9 @@ PlayerTracker.prototype.updateVisibleNodes = function () {
         });
     }
     this.viewNodes = this.viewNodes.concat(this.cells);
-    this.viewNodes.sort(function (a, b) { return a.nodeId - b.nodeId; });
+    this.viewNodes.sort(function (a, b) {
+        return a.nodeId - b.nodeId;
+    });
 };
 
 PlayerTracker.prototype.setCenterPos = function (x, y) {
